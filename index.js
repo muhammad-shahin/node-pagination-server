@@ -5,7 +5,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -32,6 +37,12 @@ async function run() {
     app.get('/products', async (req, res) => {
       const result = await productCollection.find().toArray();
       res.send(result);
+    });
+
+    // get count of total products
+    app.get('/productsCount', async (req, res) => {
+      const count = await productCollection.estimatedDocumentCount();
+      res.send({ count });
     });
 
     // Send a ping to confirm a successful connection
