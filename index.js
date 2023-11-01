@@ -13,7 +13,7 @@ app.use(
 );
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vzygubu.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -34,8 +34,16 @@ async function run() {
       .db('reactPaginationDB')
       .collection('products');
 
+    // get products by pagination
     app.get('/products', async (req, res) => {
-      const result = await productCollection.find().toArray();
+      console.log(req.query);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const result = await productCollection
+        .find()
+        .skip((page - 1) * size)
+        .limit(size)
+        .toArray();
       res.send(result);
     });
 
@@ -43,6 +51,16 @@ async function run() {
     app.get('/productsCount', async (req, res) => {
       const count = await productCollection.estimatedDocumentCount();
       res.send({ count });
+    });
+
+    // get products by ids
+    app.post('/productByIds', async (req, res) => {
+      const productIds = req.body;
+      const objectProductIds = productIds.map((id) => new ObjectId(id));
+      console.log(objectProductIds);
+      const query = { _id: { $in: objectProductIds } };
+      const result = await productCollection.find(query).toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
